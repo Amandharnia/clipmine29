@@ -6,12 +6,13 @@
     <meta name="theme-color" content="#10110f" />
     <meta
       name="description"
-      content="Turn long videos into short, shareable clips. Edit and export right in your browser."
+      content="Create short AI videos from a text prompt, then trim and export clips in your browser."
     />
-    <title>Clipmine29 — Make a moment of it</title>
+    <title>Clipmine29 — Make your next video</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='12' fill='%23c8f169'/%3E%3Cpath d='M25.5 12.5a11 11 0 1 0 0 15' fill='none' stroke='%2310110f' stroke-linecap='round' stroke-width='5'/%3E%3C/svg%3E" />
     <link rel="stylesheet" href="./styles.css" />
     <script src="./app.js" defer></script>
+    <script src="./generator.js" defer></script>
   </head>
   <body>
     <div class="app-shell">
@@ -22,13 +23,17 @@
         </a>
         <div class="sidebar-rule"></div>
         <p class="side-label">WORKSPACE</p>
-        <a class="nav-link active" href="#studio">
+        <button id="generator-tab" class="nav-link active" type="button" aria-current="page">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z"></path><path d="m19 15 .9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9L19 15Z"></path></svg>
+          AI video maker
+        </button>
+        <button id="clips-tab" class="nav-link" type="button">
           <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4" width="17" height="16" rx="3"></rect><path d="m10 9 5 3-5 3z"></path></svg>
           Clip studio
-        </a>
+        </button>
         <div class="sidebar-note">
           <span class="note-icon">✳</span>
-          <p>Your footage stays yours.<br /><strong>Everything runs locally.</strong></p>
+          <p>Your prompt is sent to Replicate.<br /><strong>Keep your API key private.</strong></p>
         </div>
         <div class="sidebar-bottom">
           <span class="status-dot"></span>
@@ -38,21 +43,59 @@
 
       <main id="studio" class="main-content">
         <header class="topbar">
-          <div class="breadcrumb"><span>Workspace</span><span class="crumb-slash">/</span><strong>Clip studio</strong></div>
-          <span class="local-badge"><span class="status-dot"></span> PRIVATE BY DESIGN</span>
+          <div class="breadcrumb"><span>Workspace</span><span class="crumb-slash">/</span><strong id="breadcrumb-current">AI video maker</strong></div>
+          <div class="mode-switch" role="group" aria-label="Choose a workspace">
+            <button id="generator-mode" class="mode-button active" type="button" aria-pressed="true">AI maker</button>
+            <button id="clips-mode" class="mode-button" type="button" aria-pressed="false">Clip studio</button>
+          </div>
+          <span class="local-badge"><span class="status-dot"></span> REPLICATE · VIDEO-01</span>
         </header>
 
         <section class="intro">
-          <div class="eyebrow"><span class="eyebrow-line"></span> YOUR VIDEO, THE BEST BITS</div>
-          <h1>Make a moment<br />of <span>it.</span></h1>
-          <p class="intro-copy">Long video in. Can’t-stop-watching clips out.<br class="desktop-break" /> Pick the moments. We’ll take care of the format.</p>
+          <div class="eyebrow"><span class="eyebrow-line"></span> FROM A THOUGHT TO A VIDEO</div>
+          <h1>Make your next<br /><span>moment.</span></h1>
+          <p class="intro-copy">Describe the scene. Get a six-second AI video.<br class="desktop-break" /> Then make it yours in the clip studio.</p>
           <div class="step-row" aria-label="Three simple steps">
-            <div class="step"><span>01</span> Add a video</div><span class="step-divider"></span>
-            <div class="step"><span>02</span> Find your moment</div><span class="step-divider"></span>
-            <div class="step"><span>03</span> Make it a short</div>
+            <div class="step"><span>01</span> Describe it</div><span class="step-divider"></span>
+            <div class="step"><span>02</span> Generate</div><span class="step-divider"></span>
+            <div class="step"><span>03</span> Download or clip</div>
           </div>
         </section>
 
+        <section id="generator-panel" class="generator-panel" aria-label="AI video generator">
+          <form id="generator-form">
+            <label class="prompt-label" for="video-prompt">WHAT SHOULD HAPPEN IN YOUR VIDEO?</label>
+            <textarea id="video-prompt" name="prompt" rows="4" maxlength="1200" placeholder="A tiny red panda explores a lantern-lit night market in the rain, reflections shimmer on the pavement, cinematic tracking shot..." required></textarea>
+            <div class="prompt-footer">
+              <span id="prompt-count" class="prompt-count">0 / 1200</span>
+              <label class="optimizer-toggle"><input id="prompt-optimizer" type="checkbox" checked /> Help improve my prompt</label>
+            </div>
+            <div class="prompt-examples" aria-label="Example prompts">
+              <button type="button" class="example-prompt" data-prompt="A tiny red panda explores a lantern-lit night market in the rain, reflections shimmering on the pavement, cinematic tracking shot">✳ Dreamy</button>
+              <button type="button" class="example-prompt" data-prompt="A deep-sea diver discovers a glowing underwater garden, bioluminescent fish drifting past, slow cinematic camera movement">◌ Cinematic</button>
+              <button type="button" class="example-prompt" data-prompt="A miniature astronaut plants a flag on a strawberry, macro photography, playful colors, gentle camera push-in">✳ Playful</button>
+            </div>
+            <div class="generator-actions">
+              <label class="access-code-label" for="generator-access-code">APP ACCESS CODE <span>Set by the site owner</span>
+                <input id="generator-access-code" type="password" autocomplete="off" maxlength="200" placeholder="Enter the access code" required />
+              </label>
+              <button id="generate-button" class="primary-button generate-button" type="submit"><span>✳</span> Generate video</button>
+            </div>
+            <p class="generation-note">Creates one 6-second video. Generation uses paid Replicate credits. Your prompt is sent to Replicate; never enter private or sensitive information.</p>
+            <p id="generation-error" class="error-message" role="alert" hidden></p>
+          </form>
+
+          <section id="generation-result" class="generation-result" aria-live="polite" hidden>
+            <div class="result-heading"><div><span class="card-step">AI</span><h2 id="generation-status">Preparing your video</h2></div><span id="generation-elapsed" class="duration-label"></span></div>
+            <p id="generation-detail" class="field-hint">Your generation is running. You can keep this tab open while it finishes.</p>
+            <div id="generation-progress" class="generation-progress" aria-hidden="true"><span></span></div>
+            <video id="generated-video" class="generated-video" controls playsinline hidden></video>
+            <a id="download-video" class="primary-button download-video" hidden>↓ Open or download video</a>
+            <button id="check-generation" class="quiet-button check-generation" type="button" hidden>Check generation status</button>
+          </section>
+        </section>
+
+        <div id="clip-studio" hidden>
         <section id="upload-panel" class="upload-panel" aria-label="Upload a video">
           <input id="video-input" class="visually-hidden" type="file" accept="video/*" />
           <div class="upload-inner">
@@ -126,6 +169,7 @@
             </div>
           </div>
         </section>
+        </div>
 
         <footer class="page-footer"><span>© 2026 clipmine29</span><span>Made for the moments that matter.</span></footer>
       </main>
